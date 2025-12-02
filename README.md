@@ -16,8 +16,6 @@ ESP32-S3 ve LVGL kullanılarak geliştirilmiş, yüksek çözünürlüklü AMOLE
 
 ## 🛠️ Donanım Bağlantıları
 
-Projede I2C pin çakışmasını önlemek amacıyla sensör çıkışı standart SDA pini yerine GPIO 7 üzerine alınmıştır.
-
 | XGZP6847 Sensör | ESP32-S3 (Waveshare) | Açıklama |
 |-----------------|----------------------|----------|
 | VCC | 3.3V | I2C Soketinden alınabilir |
