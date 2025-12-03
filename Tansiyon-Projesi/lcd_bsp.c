@@ -191,15 +191,15 @@ void tansiyon_arayuzu_yap(void)
     lv_obj_add_flag(sarj_ikonu, LV_OBJ_FLAG_HIDDEN);
 
     // 5. YÜZDE YAZISI
-    label_pil_text = lv_label_create(bar_pil);
-    lv_label_set_text(label_pil_text, "--%");
-    lv_obj_set_style_text_color(label_pil_text, lv_color_white(), 0);
+label_pil_text = lv_label_create(bar_pil);
+lv_label_set_text(label_pil_text, "--%");
+lv_obj_set_style_text_color(label_pil_text, lv_color_black(), 0);
 
-    #if LV_FONT_MONTSERRAT_18
-    lv_obj_set_style_text_font(label_pil_text, &lv_font_montserrat_18, 0);
-    #endif
+#if LV_FONT_MONTSERRAT_18
+lv_obj_set_style_text_font(label_pil_text, &lv_font_montserrat_18, 0);
+#endif
 
-    lv_obj_center(label_pil_text);
+lv_obj_center(label_pil_text);
 
     /* --- KADRAN SAYILARI - FONT 26 --- */
     static lv_style_t style_ticks;
