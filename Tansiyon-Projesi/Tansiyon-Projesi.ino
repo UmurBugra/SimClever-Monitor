@@ -5,7 +5,7 @@ const int sensorPin = 7;   // Basınç Sensörü (IO7)
 const int bataryaPin = 4;  // Pil Voltajı (IO4 - Dahili Voltaj Bölücü)
 
 /* --- KALİBRASYON DEĞERLERİ --- */
-float voltageZero = 0.205; // Buraya kendi kalibrasyon değerini yaz!
+float voltageZero = 0.205; // Senin kalibrasyon değerin
 float voltageMaxRef = 1.725;
 float pressureMaxRef_mmHg = 200.0;
 float slope; 
@@ -53,17 +53,23 @@ void loop() {
   if(millis() - sonPilOkuma > 1000) {
     sonPilOkuma = millis();
     
-    // Waveshare ESP32-S3-Touch-AMOLED-1.43 Şemasına göre:
-    // Pil voltajı 200K ve 100K dirençler ile bölünür (1/3 Oranı).
-    // Yani okunan değer x 3 = Gerçek Pil Voltajı.
+    // --- TİTREMEYİ ENGELLEMEK İÇİN ORTALAMA ALIYORUZ ---
+    long batSum = 0;
+    int batSamples = 20; // 20 kere oku, ortalamasını al
+    for(int k=0; k < batSamples; k++) {
+        batSum += analogRead(bataryaPin);
+        delay(2); // Okumalar arası minik bekleme
+    }
     
-    int rawBat = analogRead(bataryaPin);
-    float batVolt = (rawBat / 4095.0) * 3.3 * 3.0; // Çarpı 3 (Voltaj Bölücü)
+    // Waveshare şemasına göre (1/3 Voltaj Bölücü)
+    // Formül: (OrtalamaADC / 4095) * 3.3V * 3
+    float batVolt = (batSum / (float)batSamples / 4095.0) * 3.3 * 3.0;
     
-    // Lityum Polimer (LiPo) Pil Yüzde Hesabı
-    // 3.00V = %0 (Boş)
-    // 4.20V = %100 (Dolu)
-    int yuzde = map(batVolt * 100, 300, 420, 0, 100);
+    // --- LIPO PİL YÜZDE HESABI ---
+    // 4.20V = %100 (Tam Dolu)
+    // 3.30V = %0   (ESP32 için güvenli alt sınır)
+    // map fonksiyonu: (Değer, AltSınır, ÜstSınır, HedefAlt, HedefÜst)
+    int yuzde = map(batVolt * 100, 330, 420, 0, 100);
     
     // Sınırlandırma (Yüzde 0-100 dışına çıkmasın)
     yuzde = constrain(yuzde, 0, 100);
