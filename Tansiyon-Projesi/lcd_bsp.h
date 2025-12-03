@@ -29,8 +29,11 @@ void lcd_lvgl_Init(void);
 // Basıncı güncelleyen fonksiyon
 void basinc_guncelle(int deger);
 
-// Pili güncelleyen fonksiyon (BU EKSİKTİ, EKLENDİ)
+// Pili güncelleyen fonksiyon 
 void pil_guncelle(int yuzde);
+
+// Şarj durumunu gösteren fonksiyon
+void sarj_durumu_goster(bool sarj_oluyor);
 
 // Kilit mekanizmaları
 bool example_lvgl_lock(int timeout_ms);
