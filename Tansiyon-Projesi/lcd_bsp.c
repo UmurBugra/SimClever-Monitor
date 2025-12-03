@@ -70,63 +70,73 @@ void tansiyon_arayuzu_yap(void)
     lv_obj_set_size(meter, EXAMPLE_LCD_H_RES, EXAMPLE_LCD_V_RES);
     lv_obj_center(meter);
 
-    /* --- ÜST LOGO (SimClever) --- */
+    /* --- ÜST LOGO (SimClever) - FONT 40 --- */
     lv_obj_t * label_top = lv_label_create(meter);
     lv_label_set_recolor(label_top, true); 
     
-    // YENİ YEŞİL KODU: #009000 (Daha oturaklı bir yeşil)
+    // Sim = Yeşil (#009000), Clever = Siyah
     lv_label_set_text(label_top, "#009000 Sim##000000 Clever#");
     
-    #if LV_FONT_MONTSERRAT_20
-        lv_obj_set_style_text_font(label_top, &lv_font_montserrat_20, 0);
+    // lv_conf.h'da 40 açık olmalı!
+    #if LV_FONT_MONTSERRAT_40
+        lv_obj_set_style_text_font(label_top, &lv_font_montserrat_40, 0);
     #else
+        // Eğer 40 açık değilse 14 kullan (Hata vermesin diye)
         lv_obj_set_style_text_font(label_top, &lv_font_montserrat_14, 0);
     #endif
     lv_obj_align(label_top, LV_ALIGN_CENTER, 0, -60); 
 
-    /* --- ALT LOGO (C-press) --- */
+    /* --- ALT LOGO (C-press) - FONT 36 --- */
     lv_obj_t * label_bottom = lv_label_create(meter);
     lv_label_set_recolor(label_bottom, true); 
     
-    // C Harfi de aynı yeni yeşil (#009000)
     lv_label_set_text(label_bottom, "#009000 C##000000 -press#");
 
-    #if LV_FONT_MONTSERRAT_20
-        lv_obj_set_style_text_font(label_bottom, &lv_font_montserrat_20, 0);
+    // lv_conf.h'da 36 açık olmalı!
+    #if LV_FONT_MONTSERRAT_36
+        lv_obj_set_style_text_font(label_bottom, &lv_font_montserrat_36, 0);
     #else
         lv_obj_set_style_text_font(label_bottom, &lv_font_montserrat_14, 0);
     #endif
     
-    // Konum: 95'e indirdik (Daha aşağıda)
+    // Konum: 95
     lv_obj_align(label_bottom, LV_ALIGN_CENTER, 0, 95); 
 
 
-    /* --- YAZI STİLİ (SİYAH) --- */
+    /* --- KADRAN SAYILARI --- */
     static lv_style_t style_ticks;
     lv_style_init(&style_ticks);
-    #if LV_FONT_MONTSERRAT_20
+    
+    //  lv_conf.h'da 26 açık olmalı!
+    #if LV_FONT_MONTSERRAT_26
+        lv_style_set_text_font(&style_ticks, &lv_font_montserrat_26);
+    #elif LV_FONT_MONTSERRAT_20
         lv_style_set_text_font(&style_ticks, &lv_font_montserrat_20);
     #else
         lv_style_set_text_font(&style_ticks, &lv_font_montserrat_14);
     #endif
+    
     lv_style_set_text_color(&style_ticks, lv_color_black());
     lv_obj_add_style(meter, &style_ticks, LV_PART_TICKS);
 
     /* 2. ÖLÇEK (SCALE) */
     lv_meter_scale_t * scale = lv_meter_add_scale(meter);
-    lv_meter_set_scale_ticks(meter, scale, 61, 2, 10, lv_color_black());
-    lv_meter_set_scale_major_ticks(meter, scale, 4, 4, 15, lv_color_black(), 20); 
+    
+    // Sayılar büyüdüğü için aralığı (gap) artırdım: 15 -> 20
+    lv_meter_set_scale_ticks(meter, scale, 61, 2, 10, lv_color_white());
+    lv_meter_set_scale_major_ticks(meter, scale, 4, 4, 20, lv_color_white(), 20); 
+    
     lv_meter_set_scale_range(meter, scale, 0, 300, 270, 135);
 
     /* 3. RENKLİ BÖLGELER */
     
-    // 0 - 80: YEŞİL (Bölgeyi de yeni yeşil koduyla güncelledim: #009000)
-    lv_meter_indicator_t * indic_low = lv_meter_add_arc(meter, scale, 12, lv_color_hex(0x009000), 0);
+    // 0 - 80: YEŞİL 
+    lv_meter_indicator_t * indic_low = lv_meter_add_arc(meter, scale, 12, lv_color_black(), 0);
     lv_meter_set_indicator_start_value(meter, indic_low, 0);
     lv_meter_set_indicator_end_value(meter, indic_low, 80);
 
-    // 80 - 160: KIRMIZI GÖRÜNMESİ İÇİN DEEP_PURPLE (Senin ekrana özel ayar)
-    lv_meter_indicator_t * indic_mid = lv_meter_add_arc(meter, scale, 12, lv_palette_main(LV_PALETTE_DEEP_PURPLE), 0);
+    // 80 - 160: KIRMIZI 
+    lv_meter_indicator_t * indic_mid = lv_meter_add_arc(meter, scale, 12, lv_color_hex(0x0024FF), 0);
     lv_meter_set_indicator_start_value(meter, indic_mid, 80);
     lv_meter_set_indicator_end_value(meter, indic_mid, 160);
 
@@ -153,7 +163,7 @@ void tansiyon_arayuzu_yap(void)
     lv_obj_align(label_basinc, LV_ALIGN_CENTER, 0, -10); 
 }
 
-
+/* --- BAŞLATMA AYARLARI --- */
 void lcd_lvgl_Init(void)
 {
   READ_LCD_ID = read_lcd_id();
@@ -183,13 +193,10 @@ void lcd_lvgl_Init(void)
   ESP_ERROR_CHECK_WITHOUT_ABORT(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_HOST, &io_config, &io_handle));
   esp_lcd_panel_handle_t panel_handle = NULL;
   
-  /* --- İŞTE DÜZELTME BURADA --- */
-  // Renklerin karışmasının sebebi RGB sıralamasıydı. 
-  // BGR yaparak kırmızıyı kırmızı, yeşili yeşil yapacağız.
   const esp_lcd_panel_dev_config_t panel_config = 
   {
     .reset_gpio_num = EXAMPLE_PIN_NUM_LCD_RST,
-    .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_BGR, // <--- BURAYI "RGB" YERİNE "BGR" YAPTIM
+    .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_BGR, // BGR AYARI
     .bits_per_pixel = LCD_BIT_PER_PIXEL,
     .vendor_config = &vendor_config,
   };
