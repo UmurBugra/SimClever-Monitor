@@ -23,17 +23,20 @@ extern "C" {
 
 /* --- DIŞARIDAN ÇAĞIRILACAK FONKSİYONLAR --- */
 
-// Ekranı ve LVGL'i başlatan fonksiyon
+// Ekranı başlatan fonksiyon
 void lcd_lvgl_Init(void);
 
-// Tansiyon değerini ekrana gönderen fonksiyon
+// Basıncı güncelleyen fonksiyon
 void basinc_guncelle(int deger);
 
-// LVGL Thread güvenliği için kilit fonksiyonları
+// Pili güncelleyen fonksiyon (BU EKSİKTİ, EKLENDİ)
+void pil_guncelle(int yuzde);
+
+// Kilit mekanizmaları
 bool example_lvgl_lock(int timeout_ms);
 void example_lvgl_unlock(void);
 
-// Diğer yardımcı fonksiyonlar (Gerekirse diye burada durabilirler ama static olmamalılar)
+// Yardımcılar
 void example_lvgl_rounder_cb(struct _lv_disp_drv_t *disp_drv, lv_area_t *area);
 
 #ifdef __cplusplus
