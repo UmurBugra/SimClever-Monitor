@@ -23,13 +23,16 @@ void example_lvgl_rounder_cb(struct _lv_disp_drv_t *disp_drv, lv_area_t *area);
 /* PROTOTİPLER */
 void pil_guncelle(int yuzde);
 void basinc_guncelle(int deger);
+void sarj_durumu_goster(bool sarj_oluyor);
 
 /* --- TANSİYON ALETİ DEĞİŞKENLERİ --- */
 static lv_obj_t * meter;
 static lv_meter_indicator_t * indic;
 static lv_obj_t * label_basinc; 
 static lv_obj_t * bar_pil;        
-static lv_obj_t * label_pil_text; 
+static lv_obj_t * label_pil_text;
+static lv_obj_t * pil_basi;
+static lv_obj_t * sarj_ikonu;
 
 /* --- EKRAN SÜRÜCÜ KOMUTLARI --- */
 static const sh8601_lcd_init_cmd_t sh8601_lcd_init_cmds[] = 
@@ -62,15 +65,44 @@ void pil_guncelle(int yuzde)
     // Barı güncelle
     lv_bar_set_value(bar_pil, yuzde, LV_ANIM_ON);
 
-    // Renk Ayarı (%20 altı Kırmızı, üstü Yeşil)
-    if(yuzde < 20) {
-        lv_obj_set_style_bg_color(bar_pil, lv_color_hex(0xb81414), LV_PART_INDICATOR);
+    // Renk Ayarı
+    lv_color_t renk;
+    if(yuzde >= 60) {
+        renk = lv_color_hex(0x009000); // Yeşil
+    } else if(yuzde >= 20) {
+        renk = lv_color_hex(0x1E69D2); // Turuncu
     } else {
-        lv_obj_set_style_bg_color(bar_pil, lv_color_hex(0x2222B2), LV_PART_INDICATOR);
+        renk = lv_color_hex(0x0024FF); // Kırmızı
     }
+    
+    lv_obj_set_style_bg_color(bar_pil, renk, LV_PART_INDICATOR);
+    lv_obj_set_style_shadow_color(bar_pil, renk, LV_PART_INDICATOR);
 
     // Yazıyı güncelle
     lv_label_set_text_fmt(label_pil_text, "%d%%", yuzde);
+}
+
+void sarj_durumu_goster(bool sarj_oluyor)
+{
+    if(sarj_ikonu == NULL) return;
+    
+    if(sarj_oluyor) {
+        lv_obj_clear_flag(sarj_ikonu, LV_OBJ_FLAG_HIDDEN);
+        
+        // Pulse animasyonu
+        lv_anim_t a;
+        lv_anim_init(&a);
+        lv_anim_set_var(&a, sarj_ikonu);
+        lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_obj_set_style_opa);
+        lv_anim_set_values(&a, LV_OPA_COVER, LV_OPA_30);
+        lv_anim_set_time(&a, 1000);
+        lv_anim_set_playback_time(&a, 1000);
+        lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
+        lv_anim_start(&a);
+    } else {
+        lv_obj_add_flag(sarj_ikonu, LV_OBJ_FLAG_HIDDEN);
+        lv_anim_del(sarj_ikonu, NULL);
+    }
 }
 
 void basinc_guncelle(int deger)
@@ -125,32 +157,49 @@ void tansiyon_arayuzu_yap(void)
     lv_obj_align(bar_pil, LV_ALIGN_CENTER, 0, 165);
 
     // 1. ANA KISIM - Sadece arka plan
-lv_obj_set_style_bg_opa(bar_pil, LV_OPA_10, LV_PART_MAIN); // Hafif arka plan
-lv_obj_set_style_bg_color(bar_pil, lv_color_hex(0x808080), LV_PART_MAIN);
-lv_obj_set_style_border_width(bar_pil, 0, LV_PART_MAIN); // Çerçeve kaldırıldı
-lv_obj_set_style_radius(bar_pil, 6, LV_PART_MAIN);
-lv_obj_set_style_pad_all(bar_pil, 3, LV_PART_MAIN); // İç boşluk
+    lv_obj_set_style_bg_opa(bar_pil, LV_OPA_10, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(bar_pil, lv_color_hex(0x808080), LV_PART_MAIN);
+    lv_obj_set_style_border_width(bar_pil, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(bar_pil, 6, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(bar_pil, 3, LV_PART_MAIN);
 
-// 2. DOLGU
-lv_obj_set_style_bg_opa(bar_pil, LV_OPA_COVER, LV_PART_INDICATOR);
-lv_obj_set_style_bg_color(bar_pil, lv_color_hex(0x009000), LV_PART_INDICATOR);
-lv_obj_set_style_radius(bar_pil, 4, LV_PART_INDICATOR);
+    // 2. DOLGU
+    lv_obj_set_style_bg_opa(bar_pil, LV_OPA_COVER, LV_PART_INDICATOR);
+    lv_obj_set_style_bg_color(bar_pil, lv_color_hex(0x009000), LV_PART_INDICATOR);
+    lv_obj_set_style_radius(bar_pil, 4, LV_PART_INDICATOR);
 
-// Hafif gölge efekti (opsiyonel)
-lv_obj_set_style_shadow_width(bar_pil, 6, LV_PART_INDICATOR);
-lv_obj_set_style_shadow_color(bar_pil, lv_color_hex(0x009000), LV_PART_INDICATOR);
-lv_obj_set_style_shadow_opa(bar_pil, LV_OPA_20, LV_PART_INDICATOR);
+    // Hafif gölge efekti
+    lv_obj_set_style_shadow_width(bar_pil, 6, LV_PART_INDICATOR);
+    lv_obj_set_style_shadow_color(bar_pil, lv_color_hex(0x009000), LV_PART_INDICATOR);
+    lv_obj_set_style_shadow_opa(bar_pil, LV_OPA_20, LV_PART_INDICATOR);
 
-// 3. YÜZDE YAZISI
-label_pil_text = lv_label_create(bar_pil);
-lv_label_set_text(label_pil_text, "--%");
-lv_obj_set_style_text_color(label_pil_text, lv_color_white(), 0);
+    // 3. PİL BAŞLIĞI
+    pil_basi = lv_obj_create(meter);
+    lv_obj_set_size(pil_basi, 4, 18);
+    lv_obj_align_to(pil_basi, bar_pil, LV_ALIGN_OUT_RIGHT_MID, 2, 0);
+    lv_obj_set_style_bg_color(pil_basi, lv_color_hex(0x606060), 0);
+    lv_obj_set_style_bg_opa(pil_basi, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(pil_basi, 0, 0);
+    lv_obj_set_style_radius(pil_basi, 2, 0);
+    lv_obj_set_style_pad_all(pil_basi, 0, 0);
 
-#if LV_FONT_MONTSERRAT_18
-lv_obj_set_style_text_font(label_pil_text, &lv_font_montserrat_18, 0);
-#endif
+    // 4. ŞARJ İKONU (başta gizli)
+    sarj_ikonu = lv_label_create(bar_pil);
+    lv_label_set_text(sarj_ikonu, LV_SYMBOL_CHARGE);
+    lv_obj_set_style_text_color(sarj_ikonu, lv_color_white(), 0);
+    lv_obj_align(sarj_ikonu, LV_ALIGN_LEFT_MID, 5, 0);
+    lv_obj_add_flag(sarj_ikonu, LV_OBJ_FLAG_HIDDEN);
 
-lv_obj_center(label_pil_text);
+    // 5. YÜZDE YAZISI
+    label_pil_text = lv_label_create(bar_pil);
+    lv_label_set_text(label_pil_text, "--%");
+    lv_obj_set_style_text_color(label_pil_text, lv_color_white(), 0);
+
+    #if LV_FONT_MONTSERRAT_18
+    lv_obj_set_style_text_font(label_pil_text, &lv_font_montserrat_18, 0);
+    #endif
+
+    lv_obj_center(label_pil_text);
 
     /* --- KADRAN SAYILARI - FONT 26 --- */
     static lv_style_t style_ticks;
