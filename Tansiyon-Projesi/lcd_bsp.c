@@ -64,9 +64,9 @@ void pil_guncelle(int yuzde)
 
     // Renk Ayarı (%20 altı Kırmızı, üstü Yeşil)
     if(yuzde < 20) {
-        lv_obj_set_style_bg_color(bar_pil, lv_palette_main(LV_PALETTE_RED), LV_PART_INDICATOR);
+        lv_obj_set_style_bg_color(bar_pil, lv_color_hex(0xb81414), LV_PART_INDICATOR);
     } else {
-        lv_obj_set_style_bg_color(bar_pil, lv_color_hex(0x009000), LV_PART_INDICATOR);
+        lv_obj_set_style_bg_color(bar_pil, lv_color_hex(0x2222B2), LV_PART_INDICATOR);
     }
 
     // Yazıyı güncelle
@@ -117,32 +117,40 @@ void tansiyon_arayuzu_yap(void)
 
     /* --- PİL GÖSTERGESİ (BAR ŞEKLİNDE) --- */
     bar_pil = lv_bar_create(meter);
-    lv_obj_set_size(bar_pil, 50, 22);
+    lv_obj_set_size(bar_pil, 70, 30);
     lv_bar_set_range(bar_pil, 0, 100);
     lv_bar_set_value(bar_pil, 0, LV_ANIM_OFF); 
     
-    // C-press yazısının altına hizala (135px)
-    lv_obj_align(bar_pil, LV_ALIGN_CENTER, 0, 135);
+    // C-press yazısının altına hizala (165px)
+    lv_obj_align(bar_pil, LV_ALIGN_CENTER, 0, 165);
 
-    // Çerçeve
-    lv_obj_set_style_bg_opa(bar_pil, LV_OPA_TRANSP, LV_PART_MAIN);
-    lv_obj_set_style_border_color(bar_pil, lv_color_black(), LV_PART_MAIN);
-    lv_obj_set_style_border_width(bar_pil, 2, LV_PART_MAIN);
-    lv_obj_set_style_radius(bar_pil, 4, LV_PART_MAIN);
+    // 1. ANA KISIM - Sadece arka plan
+lv_obj_set_style_bg_opa(bar_pil, LV_OPA_10, LV_PART_MAIN); // Hafif arka plan
+lv_obj_set_style_bg_color(bar_pil, lv_color_hex(0x808080), LV_PART_MAIN);
+lv_obj_set_style_border_width(bar_pil, 0, LV_PART_MAIN); // Çerçeve kaldırıldı
+lv_obj_set_style_radius(bar_pil, 6, LV_PART_MAIN);
+lv_obj_set_style_pad_all(bar_pil, 3, LV_PART_MAIN); // İç boşluk
 
-    // Dolgu
-    lv_obj_set_style_bg_opa(bar_pil, LV_OPA_COVER, LV_PART_INDICATOR);
-    lv_obj_set_style_bg_color(bar_pil, lv_color_hex(0x009000), LV_PART_INDICATOR);
-    lv_obj_set_style_radius(bar_pil, 2, LV_PART_INDICATOR);
+// 2. DOLGU
+lv_obj_set_style_bg_opa(bar_pil, LV_OPA_COVER, LV_PART_INDICATOR);
+lv_obj_set_style_bg_color(bar_pil, lv_color_hex(0x009000), LV_PART_INDICATOR);
+lv_obj_set_style_radius(bar_pil, 4, LV_PART_INDICATOR);
 
-    // Yüzde Yazısı
-    label_pil_text = lv_label_create(bar_pil);
-    lv_label_set_text(label_pil_text, "--%");
-    lv_obj_set_style_text_color(label_pil_text, lv_color_black(), 0);
-    #if LV_FONT_MONTSERRAT_14
-        lv_obj_set_style_text_font(label_pil_text, &lv_font_montserrat_14, 0);
-    #endif
-    lv_obj_center(label_pil_text);
+// Hafif gölge efekti (opsiyonel)
+lv_obj_set_style_shadow_width(bar_pil, 6, LV_PART_INDICATOR);
+lv_obj_set_style_shadow_color(bar_pil, lv_color_hex(0x009000), LV_PART_INDICATOR);
+lv_obj_set_style_shadow_opa(bar_pil, LV_OPA_20, LV_PART_INDICATOR);
+
+// 3. YÜZDE YAZISI
+label_pil_text = lv_label_create(bar_pil);
+lv_label_set_text(label_pil_text, "--%");
+lv_obj_set_style_text_color(label_pil_text, lv_color_white(), 0);
+
+#if LV_FONT_MONTSERRAT_18
+lv_obj_set_style_text_font(label_pil_text, &lv_font_montserrat_18, 0);
+#endif
+
+lv_obj_center(label_pil_text);
 
     /* --- KADRAN SAYILARI - FONT 26 --- */
     static lv_style_t style_ticks;
