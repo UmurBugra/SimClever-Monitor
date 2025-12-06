@@ -2,15 +2,12 @@
 
 /* --- PIN TANIMLAMALARI --- */
 const int sensorPin = 7;   // Basınç Sensörü
-const int bataryaPin = 4;  // Pil Voltajı (IO8)
+const int bataryaPin = 4;  // Pil Voltajı (IO4)
 
 /* --- BATARYA AYARLARI (GÜNCELLENDİ) --- */
-// ADIM 1: Seri porttaki voltaj ile multimetre tutmuyorsa burayı değiştir.
 // Formül: Mevcut_Offset * (Seri_Volt / Multimetre_Volt)
 #define Measurement_offset 0.990476 
 
-// ADIM 2: Alt sınırı 3.40V'a çektik. 
-// Bu sayede %30 gibi "yalan" bir değer yerine %15 gibi "gerçekçi" bir değer göreceksin.
 #define MIN_VOLTAGE 3.40  
 #define MAX_VOLTAGE 4.20  
 
@@ -74,11 +71,6 @@ void loop() {
       pil_guncelle(yuzde);
       example_lvgl_unlock();
     }
-    
-    // KALİBRASYON İÇİN BURAYA BAK:
-    // Multimetre ile pilin voltajını ölç.
-    // Eğer buradaki "Pil Voltaj" değeri ile aynıysa SORUN YOK.
-    // Farklıysa Measurement_offset ayarını yap.
     Serial.print("Pil Voltaj: "); Serial.print(batVolt, 3);
     Serial.print("V | Yuzde: %"); Serial.println(yuzde);
   }
