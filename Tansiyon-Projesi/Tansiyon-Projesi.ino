@@ -1,99 +1,92 @@
 #include "lcd_bsp.h" 
 
 /* --- PIN TANIMLAMALARI --- */
-const int sensorPin = 7;   // Basınç Sensörü (IO7)
-const int bataryaPin = 4;  // Pil Voltajı (IO4 - Dahili Voltaj Bölücü)
+const int sensorPin = 7;   // Basınç Sensörü
+const int bataryaPin = 4;  // Pil Voltajı (IO8)
 
-/* --- KALİBRASYON DEĞERLERİ --- */
-float voltageZero = 0.205; // Senin kalibrasyon değerin
+/* --- BATARYA AYARLARI (GÜNCELLENDİ) --- */
+// ADIM 1: Seri porttaki voltaj ile multimetre tutmuyorsa burayı değiştir.
+// Formül: Mevcut_Offset * (Seri_Volt / Multimetre_Volt)
+#define Measurement_offset 0.990476 
+
+// ADIM 2: Alt sınırı 3.40V'a çektik. 
+// Bu sayede %30 gibi "yalan" bir değer yerine %15 gibi "gerçekçi" bir değer göreceksin.
+#define MIN_VOLTAGE 3.40  
+#define MAX_VOLTAGE 4.20  
+
+/* --- BASINÇ KALİBRASYON --- */
+float voltageZero = 0.205; 
 float voltageMaxRef = 1.725;
 float pressureMaxRef_mmHg = 200.0;
 float slope; 
 
-/* --- ZAMANLAYICILAR --- */
-unsigned long sonPilOkuma = 0; // Pili sürekli okuyup işlemciyi yormayalım
+unsigned long sonPilOkuma = 0; 
+
+/* --- PİL OKUMA FONKSİYONU --- */
+float BAT_Get_Volts(void)
+{
+  int Volts = analogReadMilliVolts(bataryaPin); 
+  float BAT_analogVolts = (float)(Volts * 3.0 / 1000.0) / Measurement_offset;
+  return BAT_analogVolts;
+}
+
+/* --- YÜZDE HESAPLAMA --- */
+float getBatteryPercentage(float voltage) {
+    if (voltage > MAX_VOLTAGE) voltage = MAX_VOLTAGE;
+    if (voltage < MIN_VOLTAGE) voltage = MIN_VOLTAGE;
+
+    float percentage = ((voltage - MIN_VOLTAGE) / (MAX_VOLTAGE - MIN_VOLTAGE)) * 100.0;
+    return percentage;
+}
 
 void setup() {
   Serial.begin(115200);
-  
-  // Basınç Eğim Hesabı
   slope = pressureMaxRef_mmHg / (voltageMaxRef - voltageZero);
   
-  // Ekranı Başlat
   lcd_lvgl_Init();
   
-  // Pin Modları
   pinMode(sensorPin, INPUT);
-  pinMode(bataryaPin, INPUT); // Pil okuma pini
 }
 
 void loop() {
-  // ==========================================
-  // 1. BASINÇ SENSÖRÜNÜ OKUMA (Hızlı olmalı)
-  // ==========================================
+  // --- BASINÇ OKUMA ---
   long sumADC = 0;
   int samples = 20; 
-  
-  for(int i=0; i<samples; i++){
-    sumADC += analogRead(sensorPin);
-  }
-  float rawADC = sumADC / (float)samples;
-
+  for(int i=0; i<samples; i++) sumADC += analogRead(sensorPin);
+  float rawADC = sumADC / 20.0;
   float voltage = (rawADC / 4095.0) * 3.3;
   float pressure_mmHg = (voltage - voltageZero) * slope;
+  if(pressure_mmHg < 2.0) pressure_mmHg = 0.0;
 
-  // Negatif ve parazit değerleri temizle
-  if(pressure_mmHg < 2.0) {
-    pressure_mmHg = 0.0;
-  }
-
-  // ==========================================
-  // 2. PİL DURUMUNU OKUMA (Saniyede 1 kez yeterli)
-  // ==========================================
+  // --- PİL OKUMA ---
   if(millis() - sonPilOkuma > 1000) {
     sonPilOkuma = millis();
     
-    // --- TİTREMEYİ ENGELLEMEK İÇİN ORTALAMA ALIYORUZ ---
-    long batSum = 0;
-    int batSamples = 20; // 20 kere oku, ortalamasını al
-    for(int k=0; k < batSamples; k++) {
-        batSum += analogRead(bataryaPin);
-        delay(2); // Okumalar arası minik bekleme
-    }
+    // Voltajı al
+    float batVolt = BAT_Get_Volts();
     
-    // Waveshare şemasına göre (1/3 Voltaj Bölücü)
-    // Formül: (OrtalamaADC / 4095) * 3.3V * 3
-    float batVolt = (batSum / (float)batSamples / 4095.0) * 3.3 * 3.0;
-    
-    // --- LIPO PİL YÜZDE HESABI ---
-    // 4.20V = %100 (Tam Dolu)
-    // 3.30V = %0   (ESP32 için güvenli alt sınır)
-    // map fonksiyonu: (Değer, AltSınır, ÜstSınır, HedefAlt, HedefÜst)
-    int yuzde = map(batVolt * 100, 330, 420, 0, 100);
-    
-    // Sınırlandırma (Yüzde 0-100 dışına çıkmasın)
-    yuzde = constrain(yuzde, 0, 100);
+    // Yüzdeyi hesapla
+    float percentFloat = getBatteryPercentage(batVolt);
+    int yuzde = (int)percentFloat; 
 
-    // Ekrana Gönder (Kilit mekanizması ile)
+    // Ekrana Gönder
     if (example_lvgl_lock(-1)) {
       pil_guncelle(yuzde);
       example_lvgl_unlock();
     }
     
-    // Debug için seri porta yazdıralım
-    Serial.print("Pil Voltaj: ");
-    Serial.print(batVolt);
-    Serial.print("V | Yuzde: %");
-    Serial.println(yuzde);
+    // KALİBRASYON İÇİN BURAYA BAK:
+    // Multimetre ile pilin voltajını ölç.
+    // Eğer buradaki "Pil Voltaj" değeri ile aynıysa SORUN YOK.
+    // Farklıysa Measurement_offset ayarını yap.
+    Serial.print("Pil Voltaj: "); Serial.print(batVolt, 3);
+    Serial.print("V | Yuzde: %"); Serial.println(yuzde);
   }
 
-  // ==========================================
-  // 3. EKRANI GÜNCELLEME (İbre Akıcılığı için)
-  // ==========================================
+  // --- EKRAN GÜNCELLEME ---
   if (example_lvgl_lock(-1)) {
     basinc_guncelle((int)pressure_mmHg);
     example_lvgl_unlock();
   }
-
-  delay(5); // Çok kısa bekleme (Akıcılık için)
+  delay(5); 
 }
