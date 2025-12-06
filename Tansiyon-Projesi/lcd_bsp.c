@@ -8,6 +8,7 @@
 static SemaphoreHandle_t lvgl_mux = NULL; 
 #define LCD_HOST    SPI2_HOST
 
+#define EXAMPLE_Rotate_90
 #define SH8601_ID 0x86
 #define CO5300_ID 0xff
 static uint8_t READ_LCD_ID = 0x00; 
@@ -65,7 +66,7 @@ void pil_guncelle(int yuzde)
     // Barı güncelle
     lv_bar_set_value(bar_pil, yuzde, LV_ANIM_ON);
 
-    // Renk Ayarı
+    // Renk Ayarı 
     lv_color_t renk;
     if(yuzde >= 60) {
         renk = lv_color_hex(0x009000); // Yeşil
@@ -147,7 +148,7 @@ void tansiyon_arayuzu_yap(void)
     #endif
     lv_obj_align(label_bottom, LV_ALIGN_CENTER, 0, 95); 
 
-    /* --- PİL GÖSTERGESİ (BAR ŞEKLİNDE) --- */
+    /* --- ALT LOGO (C-press) - FONT 36 --- */
     bar_pil = lv_bar_create(meter);
     lv_obj_set_size(bar_pil, 70, 30);
     lv_bar_set_range(bar_pil, 0, 100);
@@ -168,7 +169,7 @@ void tansiyon_arayuzu_yap(void)
     lv_obj_set_style_bg_color(bar_pil, lv_color_hex(0x009000), LV_PART_INDICATOR);
     lv_obj_set_style_radius(bar_pil, 4, LV_PART_INDICATOR);
 
-    // Hafif gölge efekti
+    // Gölge efekti
     lv_obj_set_style_shadow_width(bar_pil, 6, LV_PART_INDICATOR);
     lv_obj_set_style_shadow_color(bar_pil, lv_color_hex(0x009000), LV_PART_INDICATOR);
     lv_obj_set_style_shadow_opa(bar_pil, LV_OPA_20, LV_PART_INDICATOR);
@@ -183,7 +184,7 @@ void tansiyon_arayuzu_yap(void)
     lv_obj_set_style_radius(pil_basi, 2, 0);
     lv_obj_set_style_pad_all(pil_basi, 0, 0);
 
-    // 4. ŞARJ İKONU (başta gizli)
+    // 4. ŞARJ İKONU
     sarj_ikonu = lv_label_create(bar_pil);
     lv_label_set_text(sarj_ikonu, LV_SYMBOL_CHARGE);
     lv_obj_set_style_text_color(sarj_ikonu, lv_color_white(), 0);
@@ -191,17 +192,17 @@ void tansiyon_arayuzu_yap(void)
     lv_obj_add_flag(sarj_ikonu, LV_OBJ_FLAG_HIDDEN);
 
     // 5. YÜZDE YAZISI
-label_pil_text = lv_label_create(bar_pil);
-lv_label_set_text(label_pil_text, "--%");
-lv_obj_set_style_text_color(label_pil_text, lv_color_black(), 0);
+    label_pil_text = lv_label_create(bar_pil);
+    lv_label_set_text(label_pil_text, "--%");
+    lv_obj_set_style_text_color(label_pil_text, lv_color_black(), 0);
 
-#if LV_FONT_MONTSERRAT_18
-lv_obj_set_style_text_font(label_pil_text, &lv_font_montserrat_18, 0);
-#endif
+    #if LV_FONT_MONTSERRAT_18
+        lv_obj_set_style_text_font(label_pil_text, &lv_font_montserrat_18, 0);
+    #endif
 
-lv_obj_center(label_pil_text);
+    lv_obj_center(label_pil_text);
 
-    /* --- KADRAN SAYILARI - FONT 26 --- */
+    /* --- KADRAN DETAYLARI --- */
     static lv_style_t style_ticks;
     lv_style_init(&style_ticks);
     #if LV_FONT_MONTSERRAT_26
@@ -212,33 +213,27 @@ lv_obj_center(label_pil_text);
     lv_style_set_text_color(&style_ticks, lv_color_black());
     lv_obj_add_style(meter, &style_ticks, LV_PART_TICKS);
 
-    /* 2. ÖLÇEK (SCALE) */
+    /* ÖLÇEK */
     lv_meter_scale_t * scale = lv_meter_add_scale(meter);
     lv_meter_set_scale_ticks(meter, scale, 61, 2, 10, lv_color_white());
     lv_meter_set_scale_major_ticks(meter, scale, 4, 4, 20, lv_color_white(), 20); 
     lv_meter_set_scale_range(meter, scale, 0, 300, 270, 135);
 
-    /* 3. RENKLİ BÖLGELER */
-    
-    // 0 - 80: SİYAH 
+    /* RENKLER */
     lv_meter_indicator_t * indic_low = lv_meter_add_arc(meter, scale, 12, lv_color_black(), 0);
     lv_meter_set_indicator_start_value(meter, indic_low, 0);
     lv_meter_set_indicator_end_value(meter, indic_low, 80);
 
-    // 80 - 160: KIRMIZI 
     lv_meter_indicator_t * indic_mid = lv_meter_add_arc(meter, scale, 12, lv_color_hex(0x0024FF), 0);
     lv_meter_set_indicator_start_value(meter, indic_mid, 80);
     lv_meter_set_indicator_end_value(meter, indic_mid, 160);
 
-    // 160 - 300: SİYAH
     lv_meter_indicator_t * indic_high = lv_meter_add_arc(meter, scale, 12, lv_color_black(), 0);
     lv_meter_set_indicator_start_value(meter, indic_high, 160);
     lv_meter_set_indicator_end_value(meter, indic_high, 300);
 
-    /* 4. İBRE */
     indic = lv_meter_add_needle_line(meter, scale, 5, lv_palette_darken(LV_PALETTE_GREY, 3), -15);
 
-    /* 5. DİJİTAL GÖSTERGE */
     lv_obj_t * label_unit = lv_label_create(meter);
     lv_label_set_text(label_unit, "mmHg");
     lv_obj_align(label_unit, LV_ALIGN_CENTER, 0, 35); 
@@ -253,7 +248,6 @@ lv_obj_center(label_pil_text);
     lv_obj_align(label_basinc, LV_ALIGN_CENTER, 0, -10); 
 }
 
-/* --- BAŞLATMA AYARLARI --- */
 /* --- BAŞLATMA AYARLARI --- */
 void lcd_lvgl_Init(void)
 {
@@ -312,18 +306,21 @@ void lcd_lvgl_Init(void)
   disp_drv.draw_buf = &disp_buf;
   disp_drv.user_data = panel_handle;
 
-  // DÖNDÜRME AYARLARI
+  // DÖNDÜRME KAPALI
   disp_drv.sw_rotate = 1;
-  disp_drv.rotated = LV_DISP_ROT_270;  
+  disp_drv.rotated = LV_DISP_ROT_270;
 
   lv_disp_t *disp = lv_disp_drv_register(&disp_drv);
 
+  /* --- HATA ÇÖZÜMÜ: DOKUNMATİK SÜRÜCÜSÜ KAPATILDI --- */
+  /*
   static lv_indev_drv_t indev_drv;    
   lv_indev_drv_init(&indev_drv);
   indev_drv.type = LV_INDEV_TYPE_POINTER;
   indev_drv.disp = disp;
   indev_drv.read_cb = example_lvgl_touch_cb;
   lv_indev_drv_register(&indev_drv);
+  */
 
   const esp_timer_create_args_t lvgl_tick_timer_args = 
   {
